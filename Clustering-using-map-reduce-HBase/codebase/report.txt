@@ -1,0 +1,72 @@
+Algorithm
+
+Step-1
+We insert a column before the 8 Feature columns where we give row id-s
+As row 1, row 2….…as asked in the problem.
+
+Step-2
+Reading data to Hbase table.
+We initialize hBase tables first to load the data
+
+HBase Tables
+create 'adjacency-matrix', 'cf'
+create 'kmeans-centroids', {NAME => 'cf', VERSIONS => 10}
+
+You can change the3 version name to different value. It just means how many versions of the hBase tables it needs to maintain. So, basically we iterate through the k-means and keep the intermediate results cached.
+ 
+
+
+
+Run the Program.sh with two parameters
+" Expected 2 parameters."
+       "Param1: Path to data points csv file"
+        "Param2: Number of clusters - K"
+
+       "Sample: ./Program.sh /home/usr/file.csv 3"
+
+It will automatically do everything – read data to hBase, run k-means and write output into a hBase table.
+
+
+
+
+Step- 3
+Load the data in hBase
+It is done by the codes in main/java/hbase
+I also wrote a method to parse csv file in order to prepare the data for hBase insertion.
+The connection set-up is done in SingletonConnection.java
+
+Step-4
+Run K-means 
+
+K-means connects to the hBase table created ‘adjacency-matrix’ and runs through the mapper and reducer codes described below:
+
+
+In this problem, we have considered inputs a set of n 1-dimensional points and desired clusters of size k [passed as input parameter].
+Once the k initial centers are chosen, the distance is calculated (Euclidean distance) from every point in the set to each of the k centers & point with the corresponding center is emitted by the mapper. Reducer collect all of the points of a particular centroid and calculate a new centroid and emit.
+
+Termination Condition:
+When difference between old and new centroid is less than or equal to 0.1
+		
+
+Algorithm for K-means: 
+
+Step1: Initially randomly centroid is selected based on data. In our implementation we used 3 centroids. 
+Step2: The Input file contains data and we randomly select k data points as centroid. 
+Step3: In Mapper class to first open the file and read the centroids 
+Step4: Mapper read the data file and emit the nearest centroid with the point to the reducer. 
+Step5: Reducer collect all this data and calculate the new corresponding centroids and emit. 
+
+Step6: In the job configuration, we are reading both files and checking 
+		if difference between old and new centroid is less than 0.1 then 
+			convergence is reached 
+	    else 
+		    repeat step 2 with new centroids.
+
+
+
+
+Output:
+The k-means output the centroid into a hTable called k-means-centroids.
+
+
+
