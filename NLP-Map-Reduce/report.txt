@@ -1,0 +1,104 @@
+		Debatri Mitra
+		Roll No- 63128512
+
+
+
+
+Algorithm :=> Java
+
+There are two major type of map-reduce program I am running -
+
+1. 
+Tested on AWS ===> Passed
+
+
+SC.jar
+
+running instruction:
+hadoop jar SC.jar <inputfilepath> <outputfilepath>/sentence_count 
+
+
+
+Run a map-reduce job to compute the following table:
+	Number_of_words in sentence :  1   2   3   4  5 ...... k
+	No_of_sentencs/ frequenc    :  N1  N2  N3 .............N_k
+
+The mapper simply takes one sentence at a time , compute number of words,  puts 1 in the count of that entry and proceeds to next sentence 
+Then the shuffler basically sorts all these so all the counts are 1 but next to each other :- it looks like this---
+	Number_of_words in sentence :  1  1 2 2 2 2 3 3...... k
+	No_of_sentencs/ frequenc    :  1  1 1 1 1 1 1 1.......1
+ 
+Then the reducer simply adds the counts of same index together to produce the count text. 
+This is required in the last step....
+
+
+2.
+
+Count N[W_i at Position j]
+
+The next step is basically word counts at different positions-
+
+Pass -1:
+Initially I was trying to do all in one program thus trying to create a big table with word counts...
+i.e. the rows are words and columns are position in a sentence
+	so, [i,j] th entry is Count of word i at position j.
+
+Why I moved to the next method:
+This big table requires something like hBase to store and is Space Complex as the table remains mostly sparse.
+
+
+
+
+Pass -2    
+Word_position_arg.jar
+Tested EMR ===> OK
+hadoop jar Word_position_arg.jar <inputfilepath> <outputfilepath>/outi i
+
+
+running instruction:
+in a linux script run like this:
+
+for i in {1..N}
+do
+   hadoop jar Word_position_arg.jar <inputfilepath> <outputfilepath>/out$i i 
+done
+/// Tested in local ===> OK
+
+Instead we calculate each column as a separate map-reduce job . This is more efficient as there will be nore sparsity
+The algorithm is to run it only N times where N is the max number of words in a sentece that was found in the generated output of SC.jar 
+This will create out1.txt, out2.txt ,..... outN.txt
+these are the columns i.e. out1.txt will have Words in Position 1 in 1st row and the counts in the second row.
+
+
+
+
+
+3. 
+Then we run the CorpusCalculator.java as a standalone with all the outputfiles in "D:/hadoop"
+Please change the filepath in the code as this is hard-coded.
+
+Here we initialize a probability map for all the sentences with initial prob 1
+Then we read one out$k.txt at a time and calculate the probability using the output of job 1 and update the Sentence map counter by multiplication
+Finally we do a linear iteration (one pass) over the Sentence map to retrieve the Top K sentences.
+
+
+
+EMR:
+Easy to use -
+setting up the arguments is also easy
+The bad thing is the lack of proper documentation between older and newer API
+My experience is better in a unix cluster
+As it is easier to config
+Most importantly if not monitored it charges a lot and there is no free tier like EC2
+
+
+
+
+
+
+
+
+
+
+
+
